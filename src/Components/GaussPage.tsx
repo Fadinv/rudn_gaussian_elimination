@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {createRef, useEffect, useRef, useState} from 'react';
 import {NumEntity} from '../entities/NumEntity';
 
 interface Result extends Row {
@@ -8,17 +8,21 @@ interface Result extends Row {
 type Row = NumEntity[];
 
 export const GaussPage = () => {
+	// Конечный результат пишем сюда
 	const [finallyResult, setFinallyResult] = useState<undefined | Result>();
-
-	const result: Result = [];
+	//
+	// Мутируемый объект, для вычисления
+	const result = useRef<Result>([]);
 	const setResult = (cb: (prev: Result) => Result) => {
-		const v = cb(result);
-		result.length = 0;
-		result.push(...v);
+		const v = cb(result.current);
+		result.current.length = 0;
+		result.current.push(...v);
 	};
 
+	// Тут храним значение для кол-ва переменных
 	const [schemeLength, setSchemeLength] = useState(4);
 
+	// Устанавливаем дефолтную схему
 	const setDefaultScheme = () => {
 		setSchemeLength(4);
 		window.setTimeout(() => {
@@ -33,6 +37,7 @@ export const GaussPage = () => {
 		});
 	};
 
+	// Схема! Описывает нам числа, которые будем считать
 	const [scheme, setScheme] = useState<Row[]>(
 		[
 			[1, -5, -7, 1, -75].map((n) => new NumEntity({numerator: n, denominator: 1})),
@@ -41,30 +46,117 @@ export const GaussPage = () => {
 			[-9, 9, 5, 3, 29].map((n) => new NumEntity({numerator: n, denominator: 1})),
 		]
 	);
-	let processes = false;
 
+	// Упрощает две строки
 	const simplifyRowsNew = (row1: Row, row2: Row, log = false) => {
+		// Индекс с которого начинаем упрощать
 		let i = 0;
+		// Результат, который мы получим, пишем сюда
 		let rowResult1: Row;
 		let rowResult2: Row;
+		// Первый элемент
 		let firstEntity = row1[i];
 
+		// Если у нас первый элемент 0 тогда инкрементим i-шку и меняем первый элемент
 		while (firstEntity !== undefined && firstEntity.numerator === 0) {
 			firstEntity = row1[++i];
 		}
 
+		// TODO: Может возникнуть проблема, если первый элемент 0 в первом массиве.
+		// TODO: Нужно отсортировать входящий массив таким образом, чтобы решалось сразу
+		// Если у нас первый элемент оказался нулем, то возвращаем массивы как есть
 		if (firstEntity.numerator === 0 || firstEntity === undefined) {
 			return [row1, row2];
 		} else {
+			// Иначе делим на значение первого элемента
 			rowResult1 = row1.map(el => el.division(firstEntity));
 		}
 
+		// Значения, чтобы расчитать коэффициент на который будем умножать
 		const ent1 = row2[i];
 		const ent2 = rowResult1[i];
-
 		const coef = ent1.division(ent2);
+
+		// Значения для второго массива высчитываются (для каждого элемента) как старое значение минус соответствующий
+		// по индексу элемент из нового упрощенного массива, которое умноженное на полученный коэффициент
 		rowResult2 = row2.map((el, index) => el.minus(rowResult1[index].multiplication(coef)));
+		// Возвращаем два новых массива, которые упростились. Далее мы должны упрощать по новым данным
 		return [rowResult1, rowResult2];
+	};
+
+	// Функция отыскивает значения для X и пишет в схему
+	// Так не очень делать, т.к. функция не чистая, но что поделать
+	const checkXFromRow = (row: Row) => {
+		// Это значение уравнения без учетов всех иксов
+		let rowResult: NumEntity | null = null;
+		// Длина элементов
+		const rowsLength = row.length - 1;
+		// Массив значений иксов (без результата)
+		const resultsArr: NumEntity[] = [];
+
+		// Формируем данные
+		for (let i = 0; i <= rowsLength; i++) {
+			if (i === rowsLength) {
+				rowResult = row[i];
+			} else {
+				resultsArr.push(row[i]);
+			}
+		}
+
+		// Если что-то пошло не так. Когда нету результата
+		if (!rowResult) return;
+
+		// Отфильтровываем массив, получаем массив из ненулевых иксов
+		// Если ненулевой икс один, то просто высчитываем значение
+		if (resultsArr.filter((el, index) => el.numerator).length === 1) {
+			const index = resultsArr.findIndex(el => el.numerator);
+			setResult((prev) => {
+				const newResult = prev ? [...prev] : [];
+				newResult[index] = rowResult!.division(resultsArr[index]);
+				return newResult;
+			});
+			// Если ненулевой икс не один, но при этом все остальные известны, то высчитываем значение неизвестного
+		} else if (resultsArr.filter((el, index) => !result.current?.[index] && el.numerator).length === 1) {
+			const index = resultsArr.findIndex(el => el.numerator);
+			const resultEntity = resultsArr.reduce((prev, current, currentIndex) => {
+				if (current.numerator && result.current?.[currentIndex]) return prev.plus(current.multiplication(result.current?.[currentIndex]));
+				else return prev;
+			});
+			setResult((prev) => {
+				const newResult = prev ? [...prev] : [];
+				newResult[index] = rowResult!.minus(resultEntity)!.division(resultsArr[index]);
+				return newResult;
+			});
+		}
+	};
+
+	// Начинаем процесс расчета
+	const doProcess = () => {
+		// Упрощенные значения храним тут. Берем изначально данные из схемы
+		const simplifiedRows: Row[] = [...scheme];
+
+		// Индекс, который будем инкрементить в цикле
+		let i = 0;
+		// Продолжаем пока индекс меньше или равен длине массива (минус один)
+		while (i <= schemeLength - 1) {
+			// Для каждого цикла, создаем цикл, начиная от текущего элемента
+			for (let j = i; j <= schemeLength - 2; j++) {
+				// Упрощаем!
+				const [newRow1, newRow2] = simplifyRowsNew(simplifiedRows[i], simplifiedRows[j + 1]);
+				// Перезаписываем новое значение упрощенного текущего массива (можно не делать на каждой итерации, но ладно)
+				simplifiedRows[i] = newRow1;
+				// Перезаписываем каждый последующий упрощенный пассив
+				simplifiedRows[j + 1] = newRow2;
+			}
+			// Не забываем
+			i++;
+		}
+
+		// Находим X для каждой строки
+		simplifiedRows.reverse().forEach(checkXFromRow);
+
+		// Устанавливаем наш результат
+		setFinallyResult(result.current);
 	};
 
 	useEffect(() => {
@@ -83,65 +175,8 @@ export const GaussPage = () => {
 	}, [schemeLength]);
 
 	useEffect(() => {
-		// !processes && doProcess();
 		setDefaultScheme();
 	}, []);
-
-	const checkXFromRow = (row: Row) => {
-		let rowResult: NumEntity | null = null;
-		const rowsLength = row.length - 1;
-		const resultsArr: NumEntity[] = [];
-
-		for (let i = 0; i <= rowsLength; i++) {
-			if (i === rowsLength) {
-				rowResult = row[i];
-			} else {
-				resultsArr.push(row[i]);
-			}
-		}
-
-		const filteredArr = resultsArr.filter((el, index) => !result?.[index] && el.numerator);
-
-		if (!rowResult) return;
-		if (resultsArr.filter((el, index) => el.numerator).length === 1) {
-			const index = resultsArr.findIndex(el => el.numerator);
-			setResult((prev) => {
-				const newResult = prev ? [...prev] : [];
-				newResult[index] = rowResult!.division(resultsArr[index]);
-				return newResult;
-			});
-		} else if (filteredArr.length === 1) {
-			const index = resultsArr.findIndex(el => el.numerator);
-			const resultEntity = resultsArr.reduce((prev, current, currentIndex) => {
-				if (current.numerator && result?.[currentIndex]) return prev.plus(current.multiplication(result?.[currentIndex]));
-				else return prev;
-			});
-			setResult((prev) => {
-				const newResult = prev ? [...prev] : [];
-				newResult[index] = rowResult!.minus(resultEntity)!.division(resultsArr[index]);
-				return newResult;
-			});
-		}
-	};
-
-	const doProcess = () => {
-		processes = true;
-		const simplifiedRows: Row[] = [...scheme];
-
-		let i = 0;
-		while (i <= schemeLength - 1) {
-			for (let j = i; j <= schemeLength - 2; j++) {
-				const [newRow1, newRow2] = simplifyRowsNew(simplifiedRows[i], simplifiedRows[j + 1]);
-				simplifiedRows[i] = newRow1;
-				simplifiedRows[j + 1] = newRow2;
-			}
-			i++;
-		}
-
-		simplifiedRows.reverse().forEach(checkXFromRow);
-
-		setFinallyResult(result);
-	};
 
 	const renderRows = () => {
 		const rows: React.ReactNode[] = [];
