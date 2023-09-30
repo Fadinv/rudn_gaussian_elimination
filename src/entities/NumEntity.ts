@@ -1,22 +1,24 @@
 interface NumEntityParams {
 	numerator: number;
 	denominator: number;
+	isEmpty?: boolean;
 }
 
 export class NumEntity {
 	private _numerator: number;
 	private _denominator: number;
+	private _isEmpty: boolean;
 
 	constructor(params: NumEntityParams) {
 		this._numerator = params.numerator;
 		this._denominator = params.denominator;
+		this._isEmpty = params.isEmpty ?? false;
 	}
 
 	public get numerator() { return this._numerator; }
 	public get denominator() { return this._denominator; }
-	public get isMinusSign() { return this._numerator / this._denominator < 0; }
 	public get value() { return {numerator: this._numerator, denominator: this._denominator}; }
-	public get isOne() { return this._numerator === 1 && this._denominator === 1; }
+	public get isEmpty() { return this._isEmpty; }
 
 	public multiplication = (byNum: NumEntity) => {
 		let numerator = +(this._numerator * byNum._numerator).toFixed();

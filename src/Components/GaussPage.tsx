@@ -19,13 +19,27 @@ export const GaussPage = () => {
 
 	const [schemeLength, setSchemeLength] = useState(4);
 
-	const [scheme, setScheme] = useState(
-		{
-			row1: [1, -5, -7, 1, -75].map((n) => new NumEntity({numerator: n, denominator: 1})),
-			row2: [1, -3, -9, -4, -41].map((n) => new NumEntity({numerator: n, denominator: 1})),
-			row3: [-2, 4, 2, 1, 18].map((n) => new NumEntity({numerator: n, denominator: 1})),
-			row4: [-9, 9, 5, 3, 29].map((n) => new NumEntity({numerator: n, denominator: 1})),
-		},
+	const setDefaultScheme = () => {
+		setSchemeLength(4);
+		window.setTimeout(() => {
+			setScheme(
+				[
+					[1, -5, -7, 1, -75].map((n) => new NumEntity({numerator: n, denominator: 1})),
+					[1, -3, -9, -4, -41].map((n) => new NumEntity({numerator: n, denominator: 1})),
+					[-2, 4, 2, 1, 18].map((n) => new NumEntity({numerator: n, denominator: 1})),
+					[-9, 9, 5, 3, 29].map((n) => new NumEntity({numerator: n, denominator: 1})),
+				]
+			);
+		});
+	};
+
+	const [scheme, setScheme] = useState<Row[]>(
+		[
+			[1, -5, -7, 1, -75].map((n) => new NumEntity({numerator: n, denominator: 1})),
+			[1, -3, -9, -4, -41].map((n) => new NumEntity({numerator: n, denominator: 1})),
+			[-2, 4, 2, 1, 18].map((n) => new NumEntity({numerator: n, denominator: 1})),
+			[-9, 9, 5, 3, 29].map((n) => new NumEntity({numerator: n, denominator: 1})),
+		]
 	);
 	let processes = false;
 
@@ -54,7 +68,23 @@ export const GaussPage = () => {
 	};
 
 	useEffect(() => {
-		!processes && doProcess();
+		setScheme(prev => {
+			const newScheme = [];
+			for (let i = 0; i <= schemeLength - 1; i++) {
+				const row: Row = [];
+				for (let j = 0; j <= schemeLength; j++) {
+					row.push(new NumEntity({numerator: 0, denominator: 1, isEmpty: true}));
+				}
+				newScheme.push(row);
+			}
+
+			return newScheme;
+		});
+	}, [schemeLength]);
+
+	useEffect(() => {
+		// !processes && doProcess();
+		setDefaultScheme();
 	}, []);
 
 	const checkXFromRow = (row: Row) => {
@@ -70,11 +100,7 @@ export const GaussPage = () => {
 			}
 		}
 
-		const filteredArr = resultsArr.filter((el, index) => {
-			return !result?.[index] && el.numerator;
-		});
-
-		// console.log('filteredArr -> ', filteredArr);
+		const filteredArr = resultsArr.filter((el, index) => !result?.[index] && el.numerator);
 
 		if (!rowResult) return;
 		if (resultsArr.filter((el, index) => el.numerator).length === 1) {
@@ -90,10 +116,8 @@ export const GaussPage = () => {
 				if (current.numerator && result?.[currentIndex]) return prev.plus(current.multiplication(result?.[currentIndex]));
 				else return prev;
 			});
-			// console.log('resultEntity', resultEntity);
 			setResult((prev) => {
 				const newResult = prev ? [...prev] : [];
-				// console.log('1231231', newResult[index], index);
 				newResult[index] = rowResult!.minus(resultEntity)!.division(resultsArr[index]);
 				return newResult;
 			});
@@ -102,53 +126,98 @@ export const GaussPage = () => {
 
 	const doProcess = () => {
 		processes = true;
-		const [row1, row2] = simplifyRowsNew(scheme.row1, scheme.row2);
-		const [, row3] = simplifyRowsNew(row1, scheme.row3);
-		const [, row4] = simplifyRowsNew(row1, scheme.row4);
-		const [row22, row33] = simplifyRowsNew(row2, row3);
-		const [, row44] = simplifyRowsNew(row2, row4);
-		const [row333, row444] = simplifyRowsNew(row33, row44, true);
+		const simplifiedRows: Row[] = [...scheme];
 
-		checkXFromRow(row444);
-		checkXFromRow(row333);
-		checkXFromRow(row22);
-		checkXFromRow(row1);
-		// console.log('RESULT', result);
+		let i = 0;
+		while (i <= schemeLength - 1) {
+			for (let j = i; j <= schemeLength - 2; j++) {
+				const [newRow1, newRow2] = simplifyRowsNew(simplifiedRows[i], simplifiedRows[j + 1]);
+				simplifiedRows[i] = newRow1;
+				simplifiedRows[j + 1] = newRow2;
+			}
+			i++;
+		}
+
+		simplifiedRows.reverse().forEach(checkXFromRow);
+
 		setFinallyResult(result);
-		console.log(row1, row2, row3, row4);
-		console.log(row22, row33, row44);
-		console.log(row333, row444);
 	};
 
 	const renderRows = () => {
-		const rows: JSX.Element[] = [];
+		const rows: React.ReactNode[] = [];
+		scheme.forEach((r, rowIndex) => {
+			const rowInnerElements: React.ReactNode[] = [];
+			r.map((el, index) => {
+				if (index === r.length - 1) {
+					rowInnerElements.push(
+						<span key={'last_' + index} style={{display: 'flex', gap: 4}}>
+							=
+						<input style={{width: 48}} type={'number'} value={el.isEmpty ? '' : el.numerator / el.denominator} onChange={e => {
+							if (!e.target.value) {
+								setScheme((prev) => {
+									const newScheme = [...prev];
+									newScheme[rowIndex][index] = new NumEntity({isEmpty: true, numerator: 0, denominator: 1});
+									return newScheme;
+								});
+							}
+							if ((+e.target.value).toFixed() === e.target.value) {
+								setScheme((prev) => {
+									const newScheme = [...prev];
+									newScheme[rowIndex][index] = new NumEntity({numerator: e.target.value ? +e.target.value : 0, denominator: 1});
+									return newScheme;
+								});
+							}
+						}}/>
+					</span>
+					);
+				} else {
+					rowInnerElements.push(
+						<span key={'x_' + index} style={{display: 'flex', gap: 4}}>
+						<input style={{width: 48}} type={'number'} value={el.isEmpty ? '' : el.numerator / el.denominator} onChange={e => {
+							if (!e.target.value) {
+								setScheme((prev) => {
+									const newScheme = [...prev];
+									newScheme[rowIndex][index] = new NumEntity({isEmpty: true, numerator: 0, denominator: 1});
+									return newScheme;
+								});
+							}
+							if ((+e.target.value).toFixed() === e.target.value) {
+								setScheme((prev) => {
+									const newScheme = [...prev];
+									newScheme[rowIndex][index] = new NumEntity({numerator: e.target.value ? +e.target.value : 0, denominator: 1});
+									return newScheme;
+								});
+							}
+						}}/>
+						<span>x<sub>{index + 1}</sub></span>
+					</span>
+					);
+				}
+			});
+			rows.push(<div key={'row_' + rowIndex} style={{display: 'flex', gap: 8, margin: '0 auto'}}>{rowInnerElements}</div>);
+		});
 
-		return <div></div>;
+		return <div style={{display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: 32}}>{rows}</div>;
 	};
+
+	const processButtonIsDisabled = scheme.some(row => row.some(ent => ent.isEmpty));
+
 	return (
 		<div>
+			<input style={{marginTop: 12}} type={'number'} min={2} max={6} value={schemeLength} onChange={(e) => setSchemeLength(+e.target.value)}/>
 			{renderRows()}
-			<div>
-				x₁ - 5x₂ - 7x₃ + x₄ = -75
-			</div>
-			<div>
-				x₁ - 3x₂ - 9x₃ - 4x₄ = -41
-			</div>
-			<div>
-				-2x₁ + 4x₂ + 2x₃ + 1x₄ = 18
-			</div>
-			<div>
-				-9x₁ + 9x₂ + 5x₃ + 3x₄ = 29
+
+			<div style={{display: 'flex', gap: 8, justifyContent: 'center'}}>
+				<button onClick={setDefaultScheme}>Установить дефолтную схему</button>
+				<button disabled={processButtonIsDisabled} onClick={doProcess}>Решить</button>
 			</div>
 
-			<button onClick={doProcess}>Решить</button>
-
-			{!finallyResult ? null : (
+			{(!finallyResult || finallyResult.some(el => !el)) ? null : (
 				<div style={{marginTop: 40}}>
-					<div>x1: {finallyResult[0]?.value.numerator} / {finallyResult[0]?.value.denominator}</div>
-					<div>x2: {finallyResult[1]?.value.numerator} / {finallyResult[1]?.value.denominator}</div>
-					<div>x3: {finallyResult[2]?.value.numerator} / {finallyResult[2]?.value.denominator}</div>
-					<div>x4: {finallyResult[3]?.value.numerator} / {finallyResult[3]?.value.denominator}</div>
+					{finallyResult.map((el, index) => {
+						if (el.value.denominator === 1) return <div key={index}>X<sub>{index + 1}</sub> = {el.value.numerator}</div>
+						else return <div key={index}>X<sub>{index + 1}</sub> = {el.value.numerator} / {el.value.denominator}</div>
+					})}
 				</div>
 			)}
 		</div>
