@@ -20,11 +20,13 @@ export const GaussPage = () => {
 	};
 
 	// Тут храним значение для кол-ва переменных
-	const [schemeLength, setSchemeLength] = useState(4);
+	const [schemeLength, setSchemeLength] = useState(2);
 
 	// Устанавливаем дефолтную схему
 	const setDefaultScheme = () => {
 		setSchemeLength(4);
+		result.current = [];
+		setFinallyResult(undefined);
 		window.setTimeout(() => {
 			setScheme(
 				[
@@ -119,9 +121,12 @@ export const GaussPage = () => {
 		} else if (resultsArr.filter((el, index) => !result.current?.[index] && el.numerator).length === 1) {
 			const index = resultsArr.findIndex(el => el.numerator);
 			const resultEntity = resultsArr.reduce((prev, current, currentIndex) => {
-				if (current.numerator && result.current?.[currentIndex]) return prev.plus(current.multiplication(result.current?.[currentIndex]));
-				else return prev;
-			});
+				if (current.numerator && result.current?.[currentIndex]) {
+					return prev.plus(current.multiplication(result.current?.[currentIndex]));
+				} else {
+					return prev;
+				}
+			}, new NumEntity({numerator: 0, denominator: 1}));
 			setResult((prev) => {
 				const newResult = prev ? [...prev] : [];
 				newResult[index] = rowResult!.minus(resultEntity)!.division(resultsArr[index]);
@@ -132,6 +137,8 @@ export const GaussPage = () => {
 
 	// Начинаем процесс расчета
 	const doProcess = () => {
+		result.current = [];
+		setFinallyResult(undefined)
 		// Упрощенные значения храним тут. Берем изначально данные из схемы
 		const simplifiedRows: Row[] = [...scheme];
 
@@ -152,14 +159,33 @@ export const GaussPage = () => {
 			i++;
 		}
 
-		// Находим X для каждой строки
+		// Находим X для каждой строки и колонки (если все значения нулевые)
 		simplifiedRows.reverse().forEach(checkXFromRow);
-
+		for (let j = 0; j <= schemeLength - 1; j++) {
+			let isZero = false;
+			for (let k = 0; k++ <= schemeLength - 2; k++) {
+				if (simplifiedRows[k][j].numerator === 0) {
+					isZero = true;
+				} else {
+					isZero = false;
+					break;
+				}
+			}
+			if (isZero) {
+				setResult((prev) => {
+					const newResult = prev ? [...prev] : [];
+					newResult[j] = new NumEntity({numerator: 0, denominator: 1});
+					return newResult;
+				});
+			}
+		}
 		// Устанавливаем наш результат
 		setFinallyResult(result.current);
 	};
 
 	useEffect(() => {
+		result.current = [];
+		setFinallyResult(undefined);
 		setScheme(prev => {
 			const newScheme = [];
 			for (let i = 0; i <= schemeLength - 1; i++) {
