@@ -20,7 +20,7 @@ export const GaussPage = () => {
 	};
 
 	// Тут храним значение для кол-ва переменных
-	const [schemeLength, setSchemeLength] = useState(2);
+	const [schemeLength, setSchemeLength] = useState(4);
 
 	// Устанавливаем дефолтную схему
 	const setDefaultScheme = () => {
@@ -161,24 +161,24 @@ export const GaussPage = () => {
 
 		// Находим X для каждой строки и колонки (если все значения нулевые)
 		simplifiedRows.reverse().forEach(checkXFromRow);
-		for (let j = 0; j <= schemeLength - 1; j++) {
-			let isZero = false;
-			for (let k = 0; k++ <= schemeLength - 2; k++) {
-				if (simplifiedRows[k][j].numerator === 0) {
-					isZero = true;
-				} else {
-					isZero = false;
-					break;
-				}
-			}
-			if (isZero) {
-				setResult((prev) => {
-					const newResult = prev ? [...prev] : [];
-					newResult[j] = new NumEntity({numerator: 0, denominator: 1});
-					return newResult;
-				});
-			}
-		}
+		//for (let j = 0; j <= schemeLength - 1; j++) {
+		//	let isZero = false;
+		//	for (let k = 0; k++ <= schemeLength - 2; k++) {
+		//		if (simplifiedRows[k][j].numerator === 0) {
+		//			isZero = true;
+		//		} else {
+		//			isZero = false;
+		//			break;
+		//		}
+		//	}
+		//	if (isZero) {
+		//		setResult((prev) => {
+		//			const newResult = prev ? [...prev] : [];
+		//			newResult[j] = new NumEntity({numerator: 0, denominator: 1});
+		//			return newResult;
+		//		});
+		//	}
+		//}
 		// Устанавливаем наш результат
 		setFinallyResult(result.current);
 	};
@@ -262,6 +262,11 @@ export const GaussPage = () => {
 	};
 
 	const processButtonIsDisabled = scheme.some(row => row.some(ent => ent.isEmpty));
+
+	//const num1 = new NumEntity({numerator: 10, denominator: 1});
+	//const num2 = new NumEntity({numerator: 1, denominator: 10});
+	//const coef = new NumEntity({numerator: 2, denominator: 1});
+	//console.log(num2.multiplication(coef));
 
 	return (
 		<div>

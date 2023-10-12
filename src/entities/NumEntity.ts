@@ -34,7 +34,7 @@ export class NumEntity {
 		} else if (numerator % denominator) {
 			let cof = Math.abs(denominator);
 			while (cof) {
-				if (numerator % cof && denominator % cof) {
+				if (!(numerator % cof) && !(denominator % cof)) {
 					return new NumEntity({numerator: +(numerator / cof).toFixed(), denominator: +(denominator / cof).toFixed()});
 				} else {
 					cof--;
@@ -81,7 +81,7 @@ export class NumEntity {
 		} else if (numerator % denominator) {
 			let cof = Math.abs(denominator);
 			while (cof) {
-				if (numerator % cof && denominator % cof) {
+				if (!(numerator % cof) && !(denominator % cof)) {
 					return new NumEntity({numerator: +(numerator / cof).toFixed(), denominator: +(denominator / cof).toFixed()});
 				} else {
 					cof--;
@@ -102,7 +102,7 @@ export class NumEntity {
 		} else if (numerator % denominator) {
 			let cof = Math.abs(denominator);
 			while (cof) {
-				if (numerator % cof && denominator % cof) {
+				if (!(numerator % cof) && !(denominator % cof)) {
 					return new NumEntity({numerator: +(numerator / cof).toFixed(), denominator: +(denominator / cof).toFixed()});
 				} else {
 					cof--;
