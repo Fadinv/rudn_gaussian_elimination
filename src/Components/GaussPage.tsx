@@ -239,7 +239,7 @@ export const GaussPage: React.FC<GaussPageProps> = (props) => {
 					rowInnerElements.push(
 						<span key={'last_' + index} style={{display: 'flex', gap: 4}}>
 							=
-						<Input htmlSize={2} size={'sm'} style={{width: 48}} type={'number'} value={el.isEmpty ? '' : el.numerator / el.denominator} onChange={e => {
+						<Input htmlSize={2} size={'sm'} style={{width: 64}} type={'number'} value={el.isEmpty ? '' : el.numerator / el.denominator} onChange={e => {
 							if (!e.target.value) {
 								setScheme((prev) => {
 									const newScheme = [...prev];
@@ -260,7 +260,7 @@ export const GaussPage: React.FC<GaussPageProps> = (props) => {
 				} else {
 					rowInnerElements.push(
 						<span key={'x_' + index} style={{display: 'flex', gap: 4}}>
-						<Input size={'sm'} htmlSize={2} style={{width: 48}} type={'number'} value={el.isEmpty ? '' : el.numerator / el.denominator} onChange={e => {
+						<Input size={'sm'} htmlSize={2} style={{width: 64}} type={'number'} value={el.isEmpty ? '' : el.numerator / el.denominator} onChange={e => {
 							if (!e.target.value) {
 								setScheme((prev) => {
 									const newScheme = [...prev];
@@ -287,7 +287,7 @@ export const GaussPage: React.FC<GaussPageProps> = (props) => {
 		return <div style={{display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: 32}}>{rows}</div>;
 	};
 
-	const processButtonIsDisabled = scheme.some(row => row.some(ent => ent.isEmpty));
+	const processButtonIsDisabled = !schemeLength || scheme.some(row => row.some(ent => ent.isEmpty));
 
 	//const num1 = new NumEntity({numerator: 10, denominator: 1});
 	//const num2 = new NumEntity({numerator: 1, denominator: 10});
