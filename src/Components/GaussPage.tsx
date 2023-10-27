@@ -8,7 +8,11 @@ interface Result extends Row {
 
 type Row = NumEntity[];
 
-export const GaussPage = () => {
+export interface GaussPageProps {
+	defaultScheme?: Row[];
+}
+
+export const GaussPage: React.FC<GaussPageProps> = (props) => {
 	// Конечный результат пишем сюда
 	const [finallyResult, setFinallyResult] = useState<undefined | Result>();
 	//
@@ -21,7 +25,7 @@ export const GaussPage = () => {
 	};
 
 	// Тут храним значение для кол-ва переменных
-	const [schemeLength, setSchemeLength] = useState<undefined | number>(4);
+	const [schemeLength, setSchemeLength] = useState<undefined | number>(props?.defaultScheme ? props.defaultScheme.length : 4);
 
 	const setSchemeLengthFunc = useCallback((value: number | undefined) => {
 		let result: number | undefined;
@@ -38,12 +42,14 @@ export const GaussPage = () => {
 
 	// Устанавливаем дефолтную схему
 	const setDefaultScheme = () => {
-		setSchemeLength(4);
+		setSchemeLength(props?.defaultScheme ? props.defaultScheme.length : 4);
 		result.current = [];
 		setFinallyResult(undefined);
 		window.setTimeout(() => {
 			setScheme(
-				[
+				props?.defaultScheme
+					? props.defaultScheme
+					: [
 					[1, -5, -7, 1, -75].map((n) => new NumEntity({numerator: n, denominator: 1})),
 					[1, -3, -9, -4, -41].map((n) => new NumEntity({numerator: n, denominator: 1})),
 					[-2, 4, 2, 1, 18].map((n) => new NumEntity({numerator: n, denominator: 1})),
@@ -85,7 +91,7 @@ export const GaussPage = () => {
 			return [row1, row2];
 		} else {
 			// Иначе делим на значение первого элемента
-			rowResult1 = row1.map(el => el.division(firstEntity));
+			rowResult1 = row1.map(el => el.numerator === 0 ? el : el.division(firstEntity));
 		}
 
 		// Значения, чтобы расчитать коэффициент на который будем умножать
@@ -95,7 +101,10 @@ export const GaussPage = () => {
 
 		// Значения для второго массива высчитываются (для каждого элемента) как старое значение минус соответствующий
 		// по индексу элемент из нового упрощенного массива, которое умноженное на полученный коэффициент
-		rowResult2 = row2.map((el, index) => el.minus(rowResult1[index].multiplication(coef)));
+		rowResult2 = row2.map((el, index) => {
+			if (rowResult1[index].numerator === 0) return el;
+			return el.minus(rowResult1[index].multiplication(coef));
+		});
 		// Возвращаем два новых массива, которые упростились. Далее мы должны упрощать по новым данным
 		return [rowResult1, rowResult2];
 	};
@@ -199,7 +208,6 @@ export const GaussPage = () => {
 	};
 
 	useEffect(() => {
-		console.log('schemeLength', schemeLength);
 		if (!schemeLength) return;
 		result.current = [];
 		setFinallyResult(undefined);

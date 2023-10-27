@@ -3,6 +3,7 @@ import './App.css';
 import {GaussPage} from './Components/GaussPage';
 import {NewtonAndSimpleIterations} from './Components/NewtonAndSimpleIterations';
 import { Tabs, TabList, TabPanels, Tab, TabPanel } from '@chakra-ui/react'
+import {NumEntity} from './entities/NumEntity';
 
 
 type AppPageType = 'gauss' | 'newton';
@@ -23,7 +24,15 @@ function App() {
 						<GaussPage/>
 					</TabPanel>
 					<TabPanel>
-						<p>two!</p>
+						<GaussPage
+							defaultScheme={[
+								[15, 8, 0, 0, 0, 92].map((n) => new NumEntity({numerator: n, denominator: 1})),
+								[2, -15, 4, 0, 0, -84].map((n) => new NumEntity({numerator: n, denominator: 1})),
+								[0, 4, 11, 5, 0, -77].map((n) => new NumEntity({numerator: n, denominator: 1})),
+								[0, 0, -3, 16, -7, 15].map((n) => new NumEntity({numerator: n, denominator: 1})),
+								[0, 0, 0, 3, 8, -11].map((n) => new NumEntity({numerator: n, denominator: 1})),
+							]}
+						/>
 					</TabPanel>
 					<TabPanel>
 						<p>three!</p>
