@@ -1,5 +1,5 @@
 import {Button, Input} from '@chakra-ui/react';
-import React, {createRef, useEffect, useRef, useState} from 'react';
+import React, {createRef, useCallback, useEffect, useRef, useState} from 'react';
 import {NumEntity} from '../entities/NumEntity';
 
 interface Result extends Row {
@@ -21,7 +21,20 @@ export const GaussPage = () => {
 	};
 
 	// Тут храним значение для кол-ва переменных
-	const [schemeLength, setSchemeLength] = useState(4);
+	const [schemeLength, setSchemeLength] = useState<undefined | number>(4);
+
+	const setSchemeLengthFunc = useCallback((value: number | undefined) => {
+		let result: number | undefined;
+		if (!value) {
+		} else if (value < 2) {
+			result = 2;
+		} else if (value > 6) {
+			result = 6;
+		} else {
+			result = value;
+		}
+		setSchemeLength(result);
+	}, [schemeLength]);
 
 	// Устанавливаем дефолтную схему
 	const setDefaultScheme = () => {
@@ -138,6 +151,7 @@ export const GaussPage = () => {
 
 	// Начинаем процесс расчета
 	const doProcess = () => {
+		if (!schemeLength) return;
 		result.current = [];
 		setFinallyResult(undefined)
 		// Упрощенные значения храним тут. Берем изначально данные из схемы
@@ -185,6 +199,8 @@ export const GaussPage = () => {
 	};
 
 	useEffect(() => {
+		console.log('schemeLength', schemeLength);
+		if (!schemeLength) return;
 		result.current = [];
 		setFinallyResult(undefined);
 		setScheme(prev => {
@@ -206,6 +222,7 @@ export const GaussPage = () => {
 	}, []);
 
 	const renderRows = () => {
+		if (!schemeLength) return null;
 		const rows: React.ReactNode[] = [];
 		scheme.forEach((r, rowIndex) => {
 			const rowInnerElements: React.ReactNode[] = [];
@@ -272,7 +289,7 @@ export const GaussPage = () => {
 	return (
 		<div>
 			<span style={{marginRight: 4}}>Кол-во переменных</span>
-			<Input width={'auto'} htmlSize={2} size={'sm'} style={{marginTop: 12}} type={'number'} min={2} max={6} value={schemeLength} onChange={(e) => setSchemeLength(+e.target.value)}/>
+			<Input width={'auto'} htmlSize={2} size={'sm'} style={{marginTop: 12}} type={'number'} min={2} max={6} value={schemeLength} onChange={(e) => setSchemeLengthFunc(!e.target.value ? undefined : +e.target.value)}/>
 			{renderRows()}
 
 			<div style={{display: 'flex', gap: 8, justifyContent: 'center'}}>
