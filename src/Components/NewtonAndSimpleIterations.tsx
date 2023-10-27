@@ -108,7 +108,7 @@ export const NewtonAndSimpleIterations = () => {
 			</div>
 			{results.map((value, i) => {
 				return (
-					<div>
+					<div key={i}>
 						X<sub>{i + 2}</sub> = {value}
 					</div>
 				);
