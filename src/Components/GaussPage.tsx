@@ -1,3 +1,4 @@
+import {Button, Input} from '@chakra-ui/react';
 import React, {createRef, useEffect, useRef, useState} from 'react';
 import {NumEntity} from '../entities/NumEntity';
 
@@ -213,7 +214,7 @@ export const GaussPage = () => {
 					rowInnerElements.push(
 						<span key={'last_' + index} style={{display: 'flex', gap: 4}}>
 							=
-						<input style={{width: 48}} type={'number'} value={el.isEmpty ? '' : el.numerator / el.denominator} onChange={e => {
+						<Input htmlSize={2} size={'sm'} style={{width: 48}} type={'number'} value={el.isEmpty ? '' : el.numerator / el.denominator} onChange={e => {
 							if (!e.target.value) {
 								setScheme((prev) => {
 									const newScheme = [...prev];
@@ -234,7 +235,7 @@ export const GaussPage = () => {
 				} else {
 					rowInnerElements.push(
 						<span key={'x_' + index} style={{display: 'flex', gap: 4}}>
-						<input style={{width: 48}} type={'number'} value={el.isEmpty ? '' : el.numerator / el.denominator} onChange={e => {
+						<Input size={'sm'} htmlSize={2} style={{width: 48}} type={'number'} value={el.isEmpty ? '' : el.numerator / el.denominator} onChange={e => {
 							if (!e.target.value) {
 								setScheme((prev) => {
 									const newScheme = [...prev];
@@ -270,12 +271,13 @@ export const GaussPage = () => {
 
 	return (
 		<div>
-			<input style={{marginTop: 12}} type={'number'} min={2} max={6} value={schemeLength} onChange={(e) => setSchemeLength(+e.target.value)}/>
+			<span style={{marginRight: 4}}>Кол-во переменных</span>
+			<Input width={'auto'} htmlSize={2} size={'sm'} style={{marginTop: 12}} type={'number'} min={2} max={6} value={schemeLength} onChange={(e) => setSchemeLength(+e.target.value)}/>
 			{renderRows()}
 
 			<div style={{display: 'flex', gap: 8, justifyContent: 'center'}}>
-				<button onClick={setDefaultScheme}>Установить дефолтную схему</button>
-				<button disabled={processButtonIsDisabled} onClick={doProcess}>Решить</button>
+				<Button onClick={setDefaultScheme}>Установить дефолтную схему</Button>
+				<Button colorScheme={'green'} disabled={processButtonIsDisabled} onClick={doProcess}>Решить</Button>
 			</div>
 
 			{(!finallyResult || finallyResult.some(el => !el)) ? null : (
