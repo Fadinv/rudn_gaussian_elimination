@@ -1,10 +1,12 @@
 import React from 'react';
 import './App.css';
 import {GaussPage} from './Components/GaussPage';
+import Lab5 from './Components/Lab5';
 import {NewtonAndSimpleIterations} from './Components/NewtonAndSimpleIterations';
 import { Tabs, TabList, TabPanels, Tab, TabPanel } from '@chakra-ui/react'
 import {SimpleIterationsPage, SimpleIterationsPageProps} from './Components/SimpleIterations';
 import {NumEntity} from './entities/NumEntity';
+import Lab6 from './Components/Lab6/Lab6';
 
 
 type AppPageType = 'gauss' | 'newton';
@@ -12,12 +14,14 @@ type AppPageType = 'gauss' | 'newton';
 function App() {
 	return (
 		<div className="App">
-			<Tabs defaultIndex={2}>
+			<Tabs defaultIndex={5}>
 				<TabList>
 					<Tab>Лаба 1</Tab>
 					<Tab>Лаба 2</Tab>
 					<Tab>Лаба 3</Tab>
 					<Tab>Лаба 4</Tab>
+					<Tab>Лаба 5</Tab>
+					<Tab>Лаба 6</Tab>
 				</TabList>
 
 				<TabPanels>
@@ -40,6 +44,12 @@ function App() {
 					</TabPanel>
 					<TabPanel>
 						<NewtonAndSimpleIterations/>
+					</TabPanel>
+					<TabPanel>
+						<Lab5/>
+					</TabPanel>
+					<TabPanel>
+						<Lab6/>
 					</TabPanel>
 				</TabPanels>
 			</Tabs>
