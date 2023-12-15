@@ -18,7 +18,20 @@ export class NumEntity {
 	public get numerator() { return this._numerator; }
 	public get denominator() { return this._denominator; }
 	public get value() { return {numerator: this._numerator, denominator: this._denominator}; }
+	public get moduleValue() {
+		return new NumEntity({numerator: Math.abs(this._numerator), denominator: Math.abs(this._denominator)});
+	}
 	public get isEmpty() { return this._isEmpty; }
+
+	public isBiggerThen = (byNum: NumEntity) => {
+		if (byNum._denominator === 1 && this._denominator === 1) return this._numerator > byNum.numerator;
+		return (this._numerator / this._denominator) > (byNum.numerator / byNum.denominator);
+	};
+
+	public isBiggerOrEqualThen = (byNum: NumEntity) => {
+		if (byNum._denominator === 1 && this._denominator === 1) return this._numerator >= byNum.numerator;
+		return (this._numerator / this._denominator) >= (byNum.numerator / byNum.denominator);
+	};
 
 	public multiplication = (byNum: NumEntity) => {
 		let numerator = +(this._numerator * byNum._numerator).toFixed();
@@ -46,7 +59,7 @@ export class NumEntity {
 		}
 	};
 
-	public division = (byNum: NumEntity) => {
+	public division = (byNum: NumEntity, toFixed?: number) => {
 		let numerator = +(this._numerator * byNum._denominator).toFixed();
 		let denominator = +(this._denominator * byNum._numerator).toFixed();
 
@@ -57,6 +70,10 @@ export class NumEntity {
 
 		if (numerator === 0) {
 			return new NumEntity({numerator, denominator: 1});
+		} else if (typeof toFixed === 'number') {
+			const currentNumerator = +(numerator / denominator).toFixed(toFixed);
+			console.log(numerator, denominator, currentNumerator);
+			return new NumEntity({numerator: +(currentNumerator * (Math.pow(10, toFixed))).toFixed(), denominator: Math.pow(10, toFixed)});
 		} else if (numerator % denominator) {
 			let cof = Math.abs(denominator);
 			while (cof) {

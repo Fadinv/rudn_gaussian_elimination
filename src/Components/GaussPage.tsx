@@ -1,4 +1,5 @@
-import React, {createRef, useEffect, useRef, useState} from 'react';
+import {Button, Input} from '@chakra-ui/react';
+import React, {createRef, useCallback, useEffect, useRef, useState} from 'react';
 import {NumEntity} from '../entities/NumEntity';
 
 interface Result extends Row {
@@ -7,7 +8,11 @@ interface Result extends Row {
 
 type Row = NumEntity[];
 
-export const GaussPage = () => {
+export interface GaussPageProps {
+	defaultScheme?: Row[];
+}
+
+export const GaussPage: React.FC<GaussPageProps> = (props) => {
 	// Конечный результат пишем сюда
 	const [finallyResult, setFinallyResult] = useState<undefined | Result>();
 	//
@@ -20,16 +25,31 @@ export const GaussPage = () => {
 	};
 
 	// Тут храним значение для кол-ва переменных
-	const [schemeLength, setSchemeLength] = useState(4);
+	const [schemeLength, setSchemeLength] = useState<undefined | number>(props?.defaultScheme ? props.defaultScheme.length : 4);
+
+	const setSchemeLengthFunc = useCallback((value: number | undefined) => {
+		let result: number | undefined;
+		if (!value) {
+		} else if (value < 2) {
+			result = 2;
+		} else if (value > 6) {
+			result = 6;
+		} else {
+			result = value;
+		}
+		setSchemeLength(result);
+	}, [schemeLength]);
 
 	// Устанавливаем дефолтную схему
 	const setDefaultScheme = () => {
-		setSchemeLength(4);
+		setSchemeLength(props?.defaultScheme ? props.defaultScheme.length : 4);
 		result.current = [];
 		setFinallyResult(undefined);
 		window.setTimeout(() => {
 			setScheme(
-				[
+				props?.defaultScheme
+					? props.defaultScheme
+					: [
 					[1, -5, -7, 1, -75].map((n) => new NumEntity({numerator: n, denominator: 1})),
 					[1, -3, -9, -4, -41].map((n) => new NumEntity({numerator: n, denominator: 1})),
 					[-2, 4, 2, 1, 18].map((n) => new NumEntity({numerator: n, denominator: 1})),
@@ -71,7 +91,7 @@ export const GaussPage = () => {
 			return [row1, row2];
 		} else {
 			// Иначе делим на значение первого элемента
-			rowResult1 = row1.map(el => el.division(firstEntity));
+			rowResult1 = row1.map(el => el.numerator === 0 ? el : el.division(firstEntity));
 		}
 
 		// Значения, чтобы расчитать коэффициент на который будем умножать
@@ -81,7 +101,10 @@ export const GaussPage = () => {
 
 		// Значения для второго массива высчитываются (для каждого элемента) как старое значение минус соответствующий
 		// по индексу элемент из нового упрощенного массива, которое умноженное на полученный коэффициент
-		rowResult2 = row2.map((el, index) => el.minus(rowResult1[index].multiplication(coef)));
+		rowResult2 = row2.map((el, index) => {
+			if (rowResult1[index].numerator === 0) return el;
+			return el.minus(rowResult1[index].multiplication(coef));
+		});
 		// Возвращаем два новых массива, которые упростились. Далее мы должны упрощать по новым данным
 		return [rowResult1, rowResult2];
 	};
@@ -137,6 +160,7 @@ export const GaussPage = () => {
 
 	// Начинаем процесс расчета
 	const doProcess = () => {
+		if (!schemeLength) return;
 		result.current = [];
 		setFinallyResult(undefined)
 		// Упрощенные значения храним тут. Берем изначально данные из схемы
@@ -184,6 +208,7 @@ export const GaussPage = () => {
 	};
 
 	useEffect(() => {
+		if (!schemeLength) return;
 		result.current = [];
 		setFinallyResult(undefined);
 		setScheme(prev => {
@@ -205,6 +230,7 @@ export const GaussPage = () => {
 	}, []);
 
 	const renderRows = () => {
+		if (!schemeLength) return null;
 		const rows: React.ReactNode[] = [];
 		scheme.forEach((r, rowIndex) => {
 			const rowInnerElements: React.ReactNode[] = [];
@@ -213,7 +239,7 @@ export const GaussPage = () => {
 					rowInnerElements.push(
 						<span key={'last_' + index} style={{display: 'flex', gap: 4}}>
 							=
-						<input style={{width: 48}} type={'number'} value={el.isEmpty ? '' : el.numerator / el.denominator} onChange={e => {
+						<Input htmlSize={2} size={'sm'} style={{width: 64}} type={'number'} value={el.isEmpty ? '' : el.numerator / el.denominator} onChange={e => {
 							if (!e.target.value) {
 								setScheme((prev) => {
 									const newScheme = [...prev];
@@ -234,7 +260,7 @@ export const GaussPage = () => {
 				} else {
 					rowInnerElements.push(
 						<span key={'x_' + index} style={{display: 'flex', gap: 4}}>
-						<input style={{width: 48}} type={'number'} value={el.isEmpty ? '' : el.numerator / el.denominator} onChange={e => {
+						<Input size={'sm'} htmlSize={2} style={{width: 64}} type={'number'} value={el.isEmpty ? '' : el.numerator / el.denominator} onChange={e => {
 							if (!e.target.value) {
 								setScheme((prev) => {
 									const newScheme = [...prev];
@@ -261,7 +287,7 @@ export const GaussPage = () => {
 		return <div style={{display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: 32}}>{rows}</div>;
 	};
 
-	const processButtonIsDisabled = scheme.some(row => row.some(ent => ent.isEmpty));
+	const processButtonIsDisabled = !schemeLength || scheme.some(row => row.some(ent => ent.isEmpty));
 
 	//const num1 = new NumEntity({numerator: 10, denominator: 1});
 	//const num2 = new NumEntity({numerator: 1, denominator: 10});
@@ -270,12 +296,13 @@ export const GaussPage = () => {
 
 	return (
 		<div>
-			<input style={{marginTop: 12}} type={'number'} min={2} max={6} value={schemeLength} onChange={(e) => setSchemeLength(+e.target.value)}/>
+			<span style={{marginRight: 4}}>Кол-во переменных</span>
+			<Input width={'auto'} htmlSize={2} size={'sm'} style={{marginTop: 12}} type={'number'} min={2} max={6} value={schemeLength} onChange={(e) => setSchemeLengthFunc(!e.target.value ? undefined : +e.target.value)}/>
 			{renderRows()}
 
 			<div style={{display: 'flex', gap: 8, justifyContent: 'center'}}>
-				<button onClick={setDefaultScheme}>Установить дефолтную схему</button>
-				<button disabled={processButtonIsDisabled} onClick={doProcess}>Решить</button>
+				<Button onClick={setDefaultScheme}>Установить дефолтную схему</Button>
+				<Button colorScheme={'green'} disabled={processButtonIsDisabled} onClick={doProcess}>Решить</Button>
 			</div>
 
 			{(!finallyResult || finallyResult.some(el => !el)) ? null : (
